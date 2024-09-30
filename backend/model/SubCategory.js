@@ -19,6 +19,13 @@ const subCategory = new mongoose.Schema({
     type: mongoose.Types.ObjectId,
     ref: "Category",
   },
+  date: {
+    type: Date,
+    default: () => {
+      const date = new Date();
+      return date;
+    },
+  },
 });
 
 const SubCategoryModel = mongoose.model("SubCategory", subCategory);

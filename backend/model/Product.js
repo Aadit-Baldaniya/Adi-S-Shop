@@ -9,7 +9,7 @@ const product = new mongoose.Schema({
   },
   slug: { type: String, required: true, unique: true },
   price: { type: Number, required: true, min: 100 },
-  desc: { type: String, required: true, minLength: 200, maxLength: 2500 },
+  desc: { type: String, required: true, minLength: 20, maxLength: 2000 },
   images: {
     type: [String],
     validate: {
@@ -44,7 +44,7 @@ const product = new mongoose.Schema({
     min: 0,
     default: 0,
   },
-  qty: {
+  quantity: {
     type: Number,
     // validate: {
     //   validator: function (value) {
@@ -57,12 +57,18 @@ const product = new mongoose.Schema({
     min: 0,
     default: 0,
   },
-  // word: { type: String, required: true },
   category: { type: mongoose.Types.ObjectId, ref: "Category", required: true },
   subCategory: {
     type: mongoose.Types.ObjectId,
     ref: "SubCategory",
     required: true,
+  },
+  date: {
+    type: Date,
+    default: () => {
+      const date = new Date();
+      return date;
+    },
   },
 });
 

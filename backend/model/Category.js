@@ -15,6 +15,13 @@ const categorySchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  date: {
+    type: Date,
+    default: () => {
+      const date = new Date();
+      return date;
+    },
+  },
 });
 const Category = mongoose.model("Category", categorySchema);
 module.exports = Category;
