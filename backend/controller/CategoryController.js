@@ -4,12 +4,18 @@ const fs = require("fs/promises");
 const { log } = require("console");
 const Product = require("../model/Product");
 const SubCategoryModel = require("../model/SubCategory");
+const { deleteSingleFile } = require("../common/allUtility.js/file");
+const {
+  status200,
+  status500,
+  status404,
+} = require("../common/allUtility.js/response");
 const getAllCategory = async (req, res) => {
   try {
     const data = await Category.find();
-    res.json({ success: true, data: data });
+    status200(res, data);
   } catch (error) {
-    res.status(500).json({ success: false, msg: error.message });
+    status500(res, error.message);
   }
 };
 const getCategory = async (req, res) => {
@@ -17,20 +23,18 @@ const getCategory = async (req, res) => {
     const { id } = req.params;
     const category = await Category.findById(id);
     if (!category) {
-      res.status(404).json({ success: false, msg: "Category not found" });
+      status404(res, "Category not found");
     }
-    res.json({ success: true, data: category });
+    status200(res, category);
   } catch (error) {
-    res.status(500).json({ success: false, msg: error.message });
+    status500(res, error.message);
   }
 };
 const addCategory = async (req, res) => {
   try {
     const image = req.files.images;
     if (!image) {
-      return res
-        .status(404)
-        .json({ success: false, msg: "Image Is Reqiured!" });
+      return status404(res, "Image Is Reqiured!");
     }
     const uniqueName = Date.now() + "-" + image.name;
     const uploadPath = path.join(
@@ -43,7 +47,7 @@ const addCategory = async (req, res) => {
       ...req.body,
       images: `${process.env.BASE_NAME}/uplodeImages/category/${uniqueName}`,
     });
-    res.json({ success: true, data: data });
+    status200(res, data);
   } catch (error) {
     res.status(500).json({ success: false, msg: error.message });
   }
@@ -55,9 +59,7 @@ const patchCategory = async (req, res) => {
     const category = await Category.findById(id);
 
     if (!category) {
-      return res
-        .status(404)
-        .json({ success: false, msg: "Category not found" });
+      return status404(res, "Category not found");
     }
 
     if (req.files) {
@@ -84,9 +86,9 @@ const patchCategory = async (req, res) => {
       };
     }
     const findByIdAndupdate = await Category.findByIdAndUpdate(id, body);
-    res.json({ success: true, data: findByIdAndupdate });
+    status200(res, findByIdAndupdate);
   } catch (error) {
-    res.status(500).json({ success: false, msg: error.message });
+    status500(res, error.message);
   }
 };
 const deleteCategory = async (req, res) => {
@@ -94,35 +96,22 @@ const deleteCategory = async (req, res) => {
     const { id } = req.params;
     const data = await Category.findById(id);
     if (!data) {
-      return res
-        .status(404)
-        .json({ success: false, msg: "Category not found" });
+      return status404(res, "Category Not Found");
     }
     const categoryId = await Product.findOne({ category: id });
     const subCategoryId = await SubCategoryModel.findOne({ categoryId: id });
 
     if (categoryId || subCategoryId) {
-      return res.status(400).json({
-        success: false,
-        msg: "Category is used in Product And SubCategry  First To Remove Data From Product and SubCategory Data",
-      });
-    }
-
-    const fileBaseName = path.parse(data.images).base;
-    const filePath = await fs.readdir(
-      path.join(__dirname, "../uplodeImages/category")
-    );
-    if (filePath.includes(fileBaseName)) {
-      await fs.unlink(
-        path.join(__dirname, "../uplodeImages/category", fileBaseName)
+      return status404(
+        res,
+        "Category is used in Product And SubCategry  First To Remove Data From Product and SubCategory Data"
       );
     }
-
+    await deleteSingleFile(data, "category");
     await Category.findByIdAndDelete(id);
-
-    res.status(200).json({ success: true, msg: "category Deleted" });
+    status200(res, "category Deleted");
   } catch (error) {
-    res.status(500).json({ success: false, msg: error.message });
+    status500(res, error.message);
   }
 };
 module.exports = {

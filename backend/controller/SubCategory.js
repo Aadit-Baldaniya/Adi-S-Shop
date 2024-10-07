@@ -2,12 +2,19 @@ const SubCategoryModel = require("../model/SubCategory");
 const path = require("path");
 const fs = require("fs/promises");
 const Product = require("../model/Product");
+const { deleteSingleFile } = require("../common/allUtility.js/file");
+const {
+  status200,
+  status500,
+  status404,
+  status400,
+} = require("../common/allUtility.js/response");
 const getAllSubCategory = async (req, res) => {
   try {
     const data = await SubCategoryModel.find().populate("categoryId");
-    res.json({ success: true, data: data });
+    status200(res, data);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    status500(res, error.message);
   }
 };
 const getSubCategory = async (req, res) => {
@@ -15,18 +22,32 @@ const getSubCategory = async (req, res) => {
     const { id } = req.params;
     const subCategory = await SubCategoryModel.findById(id);
     if (!subCategory) {
-      return res.status(404).json({ message: "SubCategory not found" });
+      return status404(res, "SubCategory not found");
     }
-    res.json({ success: true, data: subCategory });
+    status200(res, subCategory);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    status500(res, error.message);
+  }
+};
+const getCategoryId = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const subCategory = await SubCategoryModel.find({
+      categoryId: id,
+    }).populate("categoryId");
+    if (!subCategory) {
+      return status404(res, "SubCategory not found");
+    }
+    status200(res, subCategory);
+  } catch (error) {
+    status500(res, error.message);
   }
 };
 const addSubCategory = async (req, res) => {
   try {
     const image = req.files.images;
     if (!image) {
-      return res.status(400).json({ message: "Please upload an image" });
+      return status400(res, "Please upload an image");
     }
     const uniqueName = Date.now() + image.name;
     const filePath = path.join(
@@ -39,9 +60,9 @@ const addSubCategory = async (req, res) => {
       ...req.body,
       images: `${process.env.BASE_NAME}/uplodeImages/subcategory/${uniqueName}`,
     });
-    res.json({ success: true, data: data });
+    status200(res, data);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    status500(res, error.message);
   }
 };
 const updateSubCategory = async (req, res) => {
@@ -50,7 +71,7 @@ const updateSubCategory = async (req, res) => {
     let body = req.body;
     const findId = await SubCategoryModel.findById(id);
     if (!findId) {
-      return res.status(404).json({ message: "SubCategory not found" });
+      return status404(res, "SubCategory not found");
     }
     if (req.files) {
       const image = req.files.images;
@@ -74,9 +95,9 @@ const updateSubCategory = async (req, res) => {
       };
     }
     const data = await SubCategoryModel.findByIdAndUpdate(id, body);
-    res.json({ success: true, data: data });
+    status200(res, data);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    status500(res, error.message);
   }
 };
 const deleteSubCategory = async (req, res) => {
@@ -84,35 +105,27 @@ const deleteSubCategory = async (req, res) => {
     const { id } = req.params;
     const findId = await SubCategoryModel.findById(id);
     if (!findId) {
-      return res.status(404).json({ message: "Id Not Found" });
+      return status400(res, "Id Not Found");
     }
     const subCategoryId = await Product.findOne({ subCategory: id });
     if (subCategoryId) {
-      return res.status(400).json({
-        success: false,
-        msg: "Category is used in Product And SubCategry  First To Remove Data From Product and SubCategory Data",
-      });
-    }
-
-    const objPath = path.parse(findId.images).base;
-    const deleteImages = await fs.readdir(
-      path.join(__dirname, "../uplodeImages/subcategory")
-    );
-    if (deleteImages.includes(objPath)) {
-      await fs.unlink(
-        path.join(__dirname, "../uplodeImages/subcategory", objPath)
+      return status404(
+        res,
+        "Category is used in Product And SubCategry  First To Remove Data From Product and SubCategory Data"
       );
     }
+    await deleteSingleFile(findId, "subcategory");
     await SubCategoryModel.findByIdAndDelete(id);
-    res.status(200).json({ success: true, mes: "delete" });
+    status200(res, "id Deleted!");
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    status500(res, error.message);
   }
 };
 
 module.exports = {
   getSubCategory,
   getAllSubCategory,
+  getCategoryId,
   updateSubCategory,
   addSubCategory,
   deleteSubCategory,
